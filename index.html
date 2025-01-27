@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>元素クイズ</title>
+  <!-- Google Fonts で「Roboto」を読み込み -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link 
+    href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" 
+    rel="stylesheet"
+  >
+  <style>
+    /* 全体のベーススタイル */
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Roboto', sans-serif;
+      background: linear-gradient(135deg, #e3f2fd 0%, #fbe9e7 100%);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    h1 {
+      font-weight: 700;
+      font-size: 2rem;
+      margin: 0;
+      text-align: center;
+    }
+    p {
+      text-align: center;
+      margin: 0.5em 0 1.5em 0;
+      color: #555;
+    }
+
+    /* 出題範囲指定コンテナ */
+    #start-container {
+      background: #fff;
+      padding: 2em 2.5em;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      width: 320px;
+      max-width: 90%;
+      box-sizing: border-box;
+      text-align: center;
+      margin-bottom: 1em;
+    }
+    #range-input {
+      width: 180px;
+      padding: 0.5em;
+      margin-bottom: 1em;
+      text-align: center;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      font-size: 1rem;
+    }
+    #range-submit {
+      font-size: 1rem;
+      font-weight: 700;
+      color: #fff;
+      background-color: #42a5f5;
+      border: none;
+      border-radius: 4px;
+      padding: 0.6em 1.2em;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+    #range-submit:hover {
+      background-color: #1e88e5;
+    }
+    #range-error {
+      color: red;
+      margin-top: 0.5em;
+      min-height: 1.5em; /* エラー表示欄の高さを確保 */
+    }
+
+    /* カード風のクイズコンテナ。最初は非表示 */
+    #quiz-container {
+      display: none; /* 初期は隠す */
+      background: #fff;
+      padding: 2em 2.5em;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      width: 320px;
+      max-width: 90%;
+      box-sizing: border-box;
+      text-align: center;
+      opacity: 0; /* フェードインアニメーション開始時に0に */
+    }
+
+    /* フェードイン用のアニメーション */
+    @keyframes fadeInUp {
+      0% {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      100% {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    /* このクラスが付与されたときにアニメを再生 */
+    .fade-in {
+      animation: fadeInUp 0.5s ease-out forwards;
+    }
+
+    /* 出題部分のテキスト */
+    #question {
+      font-size: 1.2rem;
+      margin-bottom: 1em;
+      font-weight: 700;
+      color: #333;
+    }
+    #element-symbol {
+      font-size: 1.4rem;
+      color: #1565c0; /* 濃いめの青 */
+    }
+
+    /* 入力欄 */
+    input[type="number"] {
+      width: 100px;
+      font-size: 1rem;
+      padding: 0.5em;
+      margin-bottom: 1em;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      text-align: center;
+    }
+
+    /* ボタン（クイズ側） */
+    button {
+      font-size: 1rem;
+      font-weight: 700;
+      color: #fff;
+      background-color: #42a5f5;
+      border: none;
+      border-radius: 4px;
+      padding: 0.6em 1.2em;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+    button:hover {
+      background-color: #1e88e5;
+    }
+
+    /* 結果表示 */
+    #result {
+      margin-top: 1em;
+      font-weight: 700;
+      min-height: 1.5em; /* 高さを確保してレイアウトが動きにくいように */
+    }
+
+    /* レスポンシブ対応 (小さい画面向け) */
+    @media (max-width: 480px) {
+      #start-container, #quiz-container {
+        width: 90%;
+        padding: 1.5em;
+      }
+      #question {
+        font-size: 1.1rem;
+      }
+      #element-symbol {
+        font-size: 1.3rem;
+      }
+      button {
+        width: 100%;
+        margin-top: 0.5em;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <h1>元素クイズ</h1>
+  <p>まずは出題したい原子番号の範囲を指定してください（例: 1~7）。</p>
+
+  <!-- 出題範囲指定画面 -->
+  <div id="start-container">
+    <input type="text" id="range-input" placeholder="例: 1~10">
+    <br>
+    <button id="range-submit">開始</button>
+    <div id="range-error"></div>
+  </div>
+
+  <!-- クイズ画面（最初は非表示） -->
+  <div id="quiz-container">
+    <div id="question">
+      元素記号: <span id="element-symbol">??</span>
+    </div>
+    <input type="number" id="answer" placeholder="原子番号" />
+    <br>
+    <button id="submit">解答</button>
+    <div id="result"></div>
+  </div>
+
+  <script>
+    // 全118元素のデータ（記号と原子番号）
+    const elements = [
+      { symbol: "H",  number: 1 },  { symbol: "He", number: 2 },  { symbol: "Li", number: 3 },
+      { symbol: "Be", number: 4 },  { symbol: "B",  number: 5 },  { symbol: "C",  number: 6 },
+      { symbol: "N",  number: 7 },  { symbol: "O",  number: 8 },  { symbol: "F",  number: 9 },
+      { symbol: "Ne", number: 10 }, { symbol: "Na", number: 11 }, { symbol: "Mg", number: 12 },
+      { symbol: "Al", number: 13 }, { symbol: "Si", number: 14 }, { symbol: "P",  number: 15 },
+      { symbol: "S",  number: 16 }, { symbol: "Cl", number: 17 }, { symbol: "Ar", number: 18 },
+      { symbol: "K",  number: 19 }, { symbol: "Ca", number: 20 }, { symbol: "Sc", number: 21 },
+      { symbol: "Ti", number: 22 }, { symbol: "V",  number: 23 }, { symbol: "Cr", number: 24 },
+      { symbol: "Mn", number: 25 }, { symbol: "Fe", number: 26 }, { symbol: "Co", number: 27 },
+      { symbol: "Ni", number: 28 }, { symbol: "Cu", number: 29 }, { symbol: "Zn", number: 30 },
+      { symbol: "Ga", number: 31 }, { symbol: "Ge", number: 32 }, { symbol: "As", number: 33 },
+      { symbol: "Se", number: 34 }, { symbol: "Br", number: 35 }, { symbol: "Kr", number: 36 },
+      { symbol: "Rb", number: 37 }, { symbol: "Sr", number: 38 }, { symbol: "Y",  number: 39 },
+      { symbol: "Zr", number: 40 }, { symbol: "Nb", number: 41 }, { symbol: "Mo", number: 42 },
+      { symbol: "Tc", number: 43 }, { symbol: "Ru", number: 44 }, { symbol: "Rh", number: 45 },
+      { symbol: "Pd", number: 46 }, { symbol: "Ag", number: 47 }, { symbol: "Cd", number: 48 },
+      { symbol: "In", number: 49 }, { symbol: "Sn", number: 50 }, { symbol: "Sb", number: 51 },
+      { symbol: "Te", number: 52 }, { symbol: "I",  number: 53 }, { symbol: "Xe", number: 54 },
+      { symbol: "Cs", number: 55 }, { symbol: "Ba", number: 56 }, { symbol: "La", number: 57 },
+      { symbol: "Ce", number: 58 }, { symbol: "Pr", number: 59 }, { symbol: "Nd", number: 60 },
+      { symbol: "Pm", number: 61 }, { symbol: "Sm", number: 62 }, { symbol: "Eu", number: 63 },
+      { symbol: "Gd", number: 64 }, { symbol: "Tb", number: 65 }, { symbol: "Dy", number: 66 },
+      { symbol: "Ho", number: 67 }, { symbol: "Er", number: 68 }, { symbol: "Tm", number: 69 },
+      { symbol: "Yb", number: 70 }, { symbol: "Lu", number: 71 }, { symbol: "Hf", number: 72 },
+      { symbol: "Ta", number: 73 }, { symbol: "W",  number: 74 }, { symbol: "Re", number: 75 },
+      { symbol: "Os", number: 76 }, { symbol: "Ir", number: 77 }, { symbol: "Pt", number: 78 },
+      { symbol: "Au", number: 79 }, { symbol: "Hg", number: 80 }, { symbol: "Tl", number: 81 },
+      { symbol: "Pb", number: 82 }, { symbol: "Bi", number: 83 }, { symbol: "Po", number: 84 },
+      { symbol: "At", number: 85 }, { symbol: "Rn", number: 86 }, { symbol: "Fr", number: 87 },
+      { symbol: "Ra", number: 88 }, { symbol: "Ac", number: 89 }, { symbol: "Th", number: 90 },
+      { symbol: "Pa", number: 91 }, { symbol: "U",  number: 92 }, { symbol: "Np", number: 93 },
+      { symbol: "Pu", number: 94 }, { symbol: "Am", number: 95 }, { symbol: "Cm", number: 96 },
+      { symbol: "Bk", number: 97 }, { symbol: "Cf", number: 98 }, { symbol: "Es", number: 99 },
+      { symbol: "Fm", number: 100}, { symbol: "Md", number: 101}, { symbol: "No", number: 102},
+      { symbol: "Lr", number: 103}, { symbol: "Rf", number: 104}, { symbol: "Db", number: 105},
+      { symbol: "Sg", number: 106}, { symbol: "Bh", number: 107}, { symbol: "Hs", number: 108},
+      { symbol: "Mt", number: 109}, { symbol: "Ds", number: 110}, { symbol: "Rg", number: 111},
+      { symbol: "Cn", number: 112}, { symbol: "Nh", number: 113}, { symbol: "Fl", number: 114},
+      { symbol: "Mc", number: 115}, { symbol: "Lv", number: 116}, { symbol: "Ts", number: 117},
+      { symbol: "Og", number: 118}
+    ];
+
+    // 選択された範囲内の元素を格納する配列
+    let quizElements = [];
+    // 現在の問題
+    let currentElement = null;
+
+    // 出題範囲を解析し、有効ならクイズを開始
+    function startQuiz() {
+      const rangeInput = document.getElementById("range-input").value.trim();
+      const rangeError = document.getElementById("range-error");
+
+      // 「1~7」「1-7」「10~15」のような形式を想定（~ または - を許容）
+      const regex = /^(\d+)\s*[~-]\s*(\d+)$/;
+      const match = rangeInput.match(regex);
+
+      // ★ 形式にマッチしない場合
+      if (!match) {
+        rangeError.textContent = "出題範囲の指定形式が間違っています";
+        return;
+      }
+
+      let startNum = parseInt(match[1], 10);
+      let endNum   = parseInt(match[2], 10);
+
+      // ユーザーが "3~1" のように逆転した範囲を入力した場合 → エラーにする
+      if (startNum > endNum) {
+        rangeError.textContent = "存在しない出題範囲です";
+        return;
+      }
+
+      // 1～118以外の数値が入力された場合 → エラー
+      // ただし両端が範囲外の場合も、存在しない範囲としてエラーにする
+      if (startNum < 1 || endNum > 118) {
+        rangeError.textContent = "存在しない出題範囲です";
+        return;
+      }
+
+      // フィルタリングして該当元素を抽出
+      quizElements = elements.filter(el => {
+        return (el.number >= startNum && el.number <= endNum);
+      });
+
+      // 範囲内に全く元素がない場合 → エラー
+      if (quizElements.length === 0) {
+        rangeError.textContent = "存在しない出題範囲です";
+        return;
+      }
+
+      // 正常な範囲であればクイズ開始
+      rangeError.textContent = "";
+      document.getElementById("start-container").style.display = "none";
+      document.getElementById("quiz-container").style.display = "block";
+
+      loadNewQuestion();
+    }
+
+    // ランダムに1問選んで表示
+    function loadNewQuestion() {
+      const quizContainer = document.getElementById("quiz-container");
+
+      // アニメーションを再度適用するために、一度クラスを外して再付与
+      quizContainer.classList.remove("fade-in");
+      void quizContainer.offsetWidth; // リフロー発生でアニメリセット
+      quizContainer.classList.add("fade-in");
+
+      // ランダムで1問
+      const randomIndex = Math.floor(Math.random() * quizElements.length);
+      currentElement = quizElements[randomIndex];
+
+      document.getElementById("element-symbol").textContent = currentElement.symbol;
+      document.getElementById("answer").value = "";
+      document.getElementById("result").textContent = "";
+      document.getElementById("answer").focus();
+    }
+
+    // 解答チェック
+    function checkAnswer() {
+      const userAnswer = parseInt(document.getElementById("answer").value, 10);
+      const result = document.getElementById("result");
+
+      if (isNaN(userAnswer)) {
+        result.textContent = "数値を入力してください。";
+        result.style.color = "red";
+        return;
+      }
+
+      if (userAnswer === currentElement.number) {
+        result.textContent = "正解です！";
+        result.style.color = "green";
+      } else {
+        result.textContent = `不正解... 正しい原子番号は ${currentElement.number} です。`;
+        result.style.color = "red";
+      }
+
+      // 1.5秒後に次の問題を表示
+      setTimeout(() => {
+        loadNewQuestion();
+      }, 1500);
+    }
+
+    // ページ読み込み時のセットアップ
+    window.onload = () => {
+      // 「開始」ボタンで出題範囲を確定
+      document.getElementById("range-submit").addEventListener("click", startQuiz);
+
+      // Enterキーでも範囲指定決定
+      document.getElementById("range-input").addEventListener("keypress", (e) => {
+        if (e.key === "Enter") {
+          startQuiz();
+        }
+      });
+
+      // クイズの解答ボタン
+      document.getElementById("submit").addEventListener("click", checkAnswer);
+
+      // Enterキーでも解答チェック
+      document.getElementById("answer").addEventListener("keypress", (e) => {
+        if (e.key === "Enter") {
+          checkAnswer();
+        }
+      });
+    };
+  </script>
+</body>
+</html>
