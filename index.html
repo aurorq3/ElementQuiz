@@ -2,7 +2,11 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <title>元素クイズ</title>
+  <!-- ページのタイトルを「原子番号テスト」に変更 -->
+  <title>原子番号テスト</title>
+  <!-- ページの description を設定 -->
+  <meta name="description" content="元素記号から原子番号を答えられるようにするテストです">
+  
   <!-- Google Fonts で「Roboto」を読み込み -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -271,7 +275,6 @@
       }
 
       // 1～118以外の数値が入力された場合 → エラー
-      // ただし両端が範囲外の場合も、存在しない範囲としてエラーにする
       if (startNum < 1 || endNum > 118) {
         rangeError.textContent = "存在しない出題範囲です";
         return;
@@ -302,7 +305,7 @@
 
       // アニメーションを再度適用するために、一度クラスを外して再付与
       quizContainer.classList.remove("fade-in");
-      void quizContainer.offsetWidth; // リフロー発生でアニメリセット
+      void quizContainer.offsetWidth; // リフローを発生させ、アニメリセット
       quizContainer.classList.add("fade-in");
 
       // ランダムで1問
